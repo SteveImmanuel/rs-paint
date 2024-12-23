@@ -691,7 +691,7 @@ class LatentDiffusion(DDPM):
         if self.model.conditioning_key is not None:
             if cond_key is None:
                 cond_key = self.cond_stage_key
-            if cond_key != self.first_stage_key:
+            if cond_key != self.first_stage_key: # THIS IS THE PLACE TO MODIFY THE CONDITIONING
                 if cond_key in ['txt','caption', 'coordinates_bbox']:
                     xc = batch[cond_key]
                 elif cond_key == 'image':

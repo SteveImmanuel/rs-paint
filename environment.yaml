@@ -1,4 +1,4 @@
-name: Paint-by-Example
+name: rspaint
 channels:
   - pytorch
   - defaults
