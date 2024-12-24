@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 from functools import partial
-import clip
+# import clip
 from einops import rearrange, repeat
 from transformers import CLIPTokenizer, CLIPTextModel,CLIPVisionModel,CLIPModel
-import kornia
+# import kornia
 from ldm.modules.x_transformer import Encoder, TransformerWrapper  # TODO: can we directly rely on lucidrains code and simply add this as a reuirement? --> test
 from .xf import LayerNorm, Transformer
 import math
@@ -171,12 +171,57 @@ class FrozenCLIPImageEmbedder(AbstractEncoder):
         return self(image)
 
 
+class FrozenCLIPTextEmbedder(AbstractEncoder):
+    """Uses the CLIP transformer encoder for text (from Hugging Face)"""
+    def __init__(self, version="openai/clip-vit-large-patch14"):
+        super().__init__()
+        self.transformer = CLIPTextModel.from_pretrained(version)
+        self.final_ln = LayerNorm(768)
+        self.mapper = Transformer(
+                1,
+                768,
+                5,
+                1,
+            )
 
+        self.freeze()
 
+    def freeze(self):
+        self.transformer = self.transformer.eval()
+        for param in self.parameters():
+            param.requires_grad = False
+        for param in self.mapper.parameters():
+            param.requires_grad = True
+        for param in self.final_ln.parameters():
+            param.requires_grad = True
 
+    def forward(self, tokens, attention_mask):
+        outputs = self.transformer(input_ids=tokens, attention_mask=attention_mask)
+        z = outputs.pooler_output
+        z = z.unsqueeze(1)
+        z = self.mapper(z)
+        z = self.final_ln(z)
+        return z
+
+    def encode(self, tokens, attention_mask):
+        return self(tokens, attention_mask)
 
 
 if __name__ == "__main__":
-    from ldm.util import count_params
-    model = FrozenCLIPEmbedder()
-    count_params(model, verbose=True)
+    # from ldm.util import count_params
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained('openai/clip-vit-large-patch14')
+    # print(tokenizer)
+    tokens = tokenizer('a top-down satellite image of a car', return_tensors='pt', padding='max_length', max_length=20)
+    print(tokens)
+    cliptext = FrozenCLIPTextEmbedder('openai/clip-vit-large-patch14')
+    out = cliptext(tokens.input_ids, tokens.attention_mask)
+    print(out.shape)
+
+
+    clipvision = FrozenCLIPImageEmbedder('openai/clip-vit-large-patch14')
+    image = torch.randn(1, 3, 224, 224)
+    out = clipvision(image)
+    print(out.shape)
+    # model = FrozenCLIPEmbedder()
+    # count_params(model, verbose=True)
