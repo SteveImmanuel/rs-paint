@@ -28,7 +28,10 @@ import math
 from functools import partial
 import albumentations as A
 import bezier
+from transformers import AutoTokenizer
 
+IDX2LABEL = ['airplane', 'ship', 'passenger ship', 'cargo ship', 'warship', 'boat', 'car', 'small car', 'bus', 'tractor', 'van', 'trailer', 'dump truck', 'cargo truck', 'golf field', 'baseball field', 'soccer field', 'football field', 'ground track field', 'basketball court', 'tennis court', 'storage tank', 'stadium', 'dam', 'intersection', 'swimming pool', 'helipad', 'harbor', 'expressway toll station', 'bridge', 'chimney', 'roundabout', 'container crane', 'overpass', 'motorboat', 'helicopter', 'expressway service area', 'train station', 'excavator', 'windmill', 'airport']
+IDX2LABEL = {i: l for i, l in enumerate(IDX2LABEL)}
 
 def bbox_process(bbox):
     x_min = int(bbox[0])
@@ -60,12 +63,12 @@ def get_tensor_clip(normalize=True, toTensor=True):
 
 
 class RemoteSensingDataset(data.Dataset):
-    def __init__(self,state,arbitrary_mask_percent=0,**args
-        ):
+    def __init__(self, state, arbitrary_mask_percent=0, version='openai/clip-vit-large-patch14', **args):
         self.state=state
         self.args=args
         self.arbitrary_mask_percent=arbitrary_mask_percent
         self.kernel = np.ones((1, 1), np.uint8)
+        self.tokenizer = AutoTokenizer.from_pretrained(version)
         self.random_trans=A.Compose([
             A.Resize(height=224,width=224),
             A.HorizontalFlip(p=0.5),
@@ -73,6 +76,7 @@ class RemoteSensingDataset(data.Dataset):
             A.Blur(p=0.3),
             A.ElasticTransform(p=0.3)
             ])
+            
         bad_list=[
             '1af17f3d912e9aac.txt',
             '1d5ef05c8da80e31.txt',
@@ -82,31 +86,19 @@ class RemoteSensingDataset(data.Dataset):
             '1366cde3b480a15c.txt',
             '03a53ed6ab408b9f.txt'
         ]
+
+        assert state in ['train', 'validation', 'test']
         self.bbox_path_list=[]
-        if state == "train":
-            bbox_dir=os.path.join(args['dataset_dir'],'bbox','train')
-            per_dir_file_list=os.listdir(bbox_dir)
-            for file_name in per_dir_file_list:
-                if file_name not in bad_list:
-                    self.bbox_path_list.append(os.path.join(bbox_dir,file_name))
-        elif state == "validation":
-            bbox_dir=os.path.join(args['dataset_dir'],'bbox','validation')
-            per_dir_file_list=os.listdir(bbox_dir)
-            for file_name in per_dir_file_list:
-                if file_name not in bad_list:
-                    self.bbox_path_list.append(os.path.join(bbox_dir,file_name))
-        else:
-            bbox_dir=os.path.join(args['dataset_dir'],'bbox','test')
-            per_dir_file_list=os.listdir(bbox_dir)
-            for file_name in per_dir_file_list:
-                if file_name not in bad_list:
-                    self.bbox_path_list.append(os.path.join(bbox_dir,file_name))
+
+        bbox_dir=os.path.join(args['dataset_dir'],'bbox', state)
+        per_dir_file_list=os.listdir(bbox_dir)
+        for file_name in per_dir_file_list:
+            if file_name not in bad_list:
+                self.bbox_path_list.append(os.path.join(bbox_dir,file_name))
+
         self.bbox_path_list.sort()
         self.length=len(self.bbox_path_list)
  
-
-       
-
     
     def __getitem__(self, index):
         bbox_path=self.bbox_path_list[index]
@@ -121,12 +113,18 @@ class RemoteSensingDataset(data.Dataset):
             line=f.readline()
             while line:
                 line_split=line.strip('\n').split(" ")
-                bbox_temp=[]
-                for i in range(4):
+                class_name = int(line_split[0])
+                bbox_temp = []
+                for i in range(1, 5):
                     bbox_temp.append(int(float(line_split[i])))
-                bbox_list.append(bbox_temp)
+                bbox_list.append((class_name, bbox_temp))
                 line=f.readline()
-        bbox=random.choice(bbox_list)
+        class_name, bbox=random.choice(bbox_list)
+
+        class_feat = self.tokenizer(f'a top-down satellite image of a {IDX2LABEL[class_name]}', return_tensors='pt', padding='max_length', max_length=20)
+
+        if not os.path.exists(img_path):
+            img_path=img_path.replace('.png','.jpg')
         img_p = Image.open(img_path).convert("RGB")
 
    
@@ -154,14 +152,14 @@ class RemoteSensingDataset(data.Dataset):
         right_freespace=W-bbox[2]
         up_freespace=bbox[1]-0
         down_freespace=H-bbox[3]
-        # extended_bbox[0]=bbox[0]-random.randint(0,int(0.1*left_freespace))
-        # extended_bbox[1]=bbox[1]-random.randint(0,int(0.1*up_freespace))
-        # extended_bbox[2]=bbox[2]+random.randint(0,int(0.1*right_freespace))
-        # extended_bbox[3]=bbox[3]+random.randint(0,int(0.1*down_freespace))
-        extended_bbox[0]=bbox[0]
-        extended_bbox[1]=bbox[1]
-        extended_bbox[2]=bbox[2]
-        extended_bbox[3]=bbox[3]
+        extended_bbox[0]=bbox[0]-random.randint(0,int(0.2*left_freespace)) # TODO: check this. I feel that for RS image, the padding from extended bbox is way too big
+        extended_bbox[1]=bbox[1]-random.randint(0,int(0.2*up_freespace))
+        extended_bbox[2]=bbox[2]+random.randint(0,int(0.2*right_freespace))
+        extended_bbox[3]=bbox[3]+random.randint(0,int(0.2*down_freespace))
+        # extended_bbox[0]=bbox[0]
+        # extended_bbox[1]=bbox[1]
+        # extended_bbox[2]=bbox[2]
+        # extended_bbox[3]=bbox[3]
 
         prob=random.uniform(0, 1)
         if prob<self.arbitrary_mask_percent:
@@ -252,7 +250,15 @@ class RemoteSensingDataset(data.Dataset):
         mask_tensor_resize=T.Resize([self.args['image_size'],self.args['image_size']])(mask_tensor_cropped)
         inpaint_tensor_resize=image_tensor_resize*mask_tensor_resize
 
-        return {"GT":image_tensor_resize,"inpaint_image":inpaint_tensor_resize,"inpaint_mask":mask_tensor_resize,"ref_imgs":ref_image_tensor}
+        return {
+            "GT":image_tensor_resize,
+            "inpaint_image":inpaint_tensor_resize,
+            "inpaint_mask":mask_tensor_resize,
+            "ref_imgs":ref_image_tensor, 
+            "class_tokens": class_feat.input_ids, 
+            "class_attention_mask": class_feat.attention_mask,
+            "class_name": IDX2LABEL[class_name],
+        }
 
 
 
