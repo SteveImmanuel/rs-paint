@@ -117,6 +117,7 @@ class DDPM(pl.LightningModule):
 
         self.learn_logvar = learn_logvar
         self.logvar = torch.full(fill_value=logvar_init, size=(self.num_timesteps,))
+
         if self.learn_logvar:
             self.logvar = nn.Parameter(self.logvar, requires_grad=True)
 
@@ -1078,8 +1079,9 @@ class LatentDiffusion(DDPM):
         loss_simple = self.get_loss(model_output, target, mean=False).mean([1, 2, 3])
         loss_dict.update({f'{prefix}/loss_simple': loss_simple.mean()})
 
-
-        logvar_t = self.logvar[t].to(self.device)
+        logvar = self.logvar.to(self.device)
+        # print(self.logvar, self.logvar.device, self.device, t.device)
+        logvar_t = logvar[t].to(self.device)
         loss = loss_simple / torch.exp(logvar_t) + logvar_t
         # loss = loss_simple / torch.exp(self.logvar) + self.logvar
         if self.learn_logvar:
