@@ -63,12 +63,12 @@ def get_tensor_clip(normalize=True, toTensor=True):
 
 
 class RemoteSensingDataset(data.Dataset):
-    def __init__(self, state, arbitrary_mask_percent=0, version='openai/clip-vit-large-patch14', **args):
+    def __init__(self, state, arbitrary_mask_percent=0, **args):
         self.state=state
         self.args=args
         self.arbitrary_mask_percent=arbitrary_mask_percent
         self.kernel = np.ones((1, 1), np.uint8)
-        self.tokenizer = AutoTokenizer.from_pretrained(version)
+        self.tokenizer = AutoTokenizer.from_pretrained(args['version'])
         self.random_trans=A.Compose([
             A.Resize(height=224,width=224),
             A.HorizontalFlip(p=0.5),
@@ -76,16 +76,9 @@ class RemoteSensingDataset(data.Dataset):
             A.Blur(p=0.3),
             A.ElasticTransform(p=0.3)
             ])
+        self.bbox_ratio_range = args['bbox_ratio_range']
             
-        bad_list=[
-            '1af17f3d912e9aac.txt',
-            '1d5ef05c8da80e31.txt',
-            '3095084b358d3f2d.txt',
-            '3ad7415a11ac1f5e.txt',
-            '42a30d8f8fba8b40.txt',
-            '1366cde3b480a15c.txt',
-            '03a53ed6ab408b9f.txt'
-        ]
+        bad_list=['train_238_0001.txt', 'train_83_0001.txt', '07007.txt', '04137.txt', 'train_99_0000.txt', '16734.txt', '08325.txt', '15504.txt', '15906.txt']
 
         assert state in ['train', 'validation', 'test']
         self.bbox_path_list=[]
@@ -105,8 +98,6 @@ class RemoteSensingDataset(data.Dataset):
         file_name=os.path.splitext(os.path.basename(bbox_path))[0]+'.png'
         dir_name=bbox_path.split('/')[-2]
         img_path=os.path.join(self.args['dataset_dir'], 'images', dir_name, file_name)
-        print(img_path)
-
 
         bbox_list=[]
         with open(bbox_path) as f:
@@ -127,21 +118,42 @@ class RemoteSensingDataset(data.Dataset):
             img_path=img_path.replace('.png','.jpg')
         img_p = Image.open(img_path).convert("RGB")
 
-   
+        bbox_width = bbox[2] - bbox[0]
+        bbox_height = bbox[3] - bbox[1]
+        bbox_area = bbox_width * bbox_height
+        image_area = img_p.size[0] * img_p.size[1]
+        desired_ratio = random.uniform(self.bbox_ratio_range[0], self.bbox_ratio_range[1])
+
+        if bbox_area / image_area < self.bbox_ratio_range[0]:
+            patch_side = int(math.sqrt(bbox_area / desired_ratio))
+            x_start = random.randint(min(bbox[0], max(0, bbox[2] - patch_side)), bbox[0])
+            y_start = random.randint(min(bbox[1], max(0, bbox[3] - patch_side)), bbox[1])
+
+            x_end = x_start + patch_side
+            y_end = y_start + patch_side
+            img_p = img_p.crop((x_start, y_start, x_end, y_end))
+            bbox[0] -= x_start
+            bbox[1] -= y_start
+            bbox[2] -= x_start
+            bbox[3] -= y_start
+
+            bbox[0] = max(0, bbox[0])
+            bbox[1] = max(0, bbox[1])
+            bbox[2] = min(patch_side, bbox[2])
+            bbox[3] = min(patch_side, bbox[3])
+            # ultimately, all previous logics are to make sure the resulting bounding box is within the cropped image
+
         ### Get reference image
         bbox_pad=copy.copy(bbox)
         bbox_pad[0]=bbox[0]-min(10,bbox[0]-0)
         bbox_pad[1]=bbox[1]-min(10,bbox[1]-0)
         bbox_pad[2]=bbox[2]+min(10,img_p.size[0]-bbox[2])
         bbox_pad[3]=bbox[3]+min(10,img_p.size[1]-bbox[3])
-        img_p_np=cv2.imread(img_path)
-        img_p_np = cv2.cvtColor(img_p_np, cv2.COLOR_BGR2RGB)
+        img_p_np = np.array(img_p)
         ref_image_tensor=img_p_np[bbox_pad[1]:bbox_pad[3],bbox_pad[0]:bbox_pad[2],:]
         ref_image_tensor=self.random_trans(image=ref_image_tensor)
         ref_image_tensor=Image.fromarray(ref_image_tensor["image"])
         ref_image_tensor=get_tensor_clip()(ref_image_tensor)
-
-
 
         ### Generate mask
         image_tensor = get_tensor()(img_p)
@@ -264,33 +276,3 @@ class RemoteSensingDataset(data.Dataset):
 
     def __len__(self):
         return self.length
-
-
-if __name__ == '__main__':
-    dataset = RemoteSensingDataset(state='train', arbitrary_mask_percent=0, dataset_dir='dataset/samrs', image_size=512)
-    dataitem = dataset[0]
-    gt = dataitem['GT'].numpy()
-    mask = dataitem['inpaint_mask'].numpy()
-    ref_imgs = dataitem['ref_imgs'].numpy()
-    inpaint_img = dataitem['inpaint_image'].numpy()
-
-    mean = np.array([0.48145466, 0.4578275, 0.40821073])
-    std = np.array([0.26862954, 0.26130258, 0.27577711])
-    mask = mask[0]
-
-    inpaint_img = inpaint_img.transpose(1, 2, 0)
-    inpaint_img = inpaint_img * std + mean
-    inpaint_img = (inpaint_img * 255).astype(np.uint8)
-
-    gt = gt.transpose(1, 2, 0)
-    gt = gt * std + mean
-    gt = (gt * 255).astype(np.uint8)
-
-    ref_imgs = ref_imgs.transpose(1, 2, 0)
-    ref_imgs = ref_imgs * std + mean
-    ref_imgs = (ref_imgs * 255).astype(np.uint8)
-    mask = (mask * 255).astype(np.uint8)
-    Image.fromarray(mask).save('mask.png')
-    Image.fromarray(ref_imgs).save('ref.png')
-    Image.fromarray(inpaint_img).save('inpaint.png')
-    Image.fromarray(gt).save('gt.png')
