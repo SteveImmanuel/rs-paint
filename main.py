@@ -357,7 +357,7 @@ class ImageLogger(Callback):
         if (self.check_frequency(check_idx) and  # batch_idx % self.batch_freq == 0
                 hasattr(pl_module, "log_images") and
                 callable(pl_module.log_images) and
-                self.max_images > 0):
+                self.max_images > 0) or (split != 'val' and batch_idx % 50 == 0):
             logger = type(pl_module.logger)
 
             is_train = pl_module.training
@@ -558,7 +558,7 @@ if __name__ == "__main__":
     if hasattr(model, "monitor"):
         print(f"Monitoring {model.monitor} as checkpoint metric.")
         default_modelckpt_cfg["params"]["monitor"] = model.monitor
-        default_modelckpt_cfg["params"]["save_top_k"] = 30
+        default_modelckpt_cfg["params"]["save_top_k"] = 2
 
     if "modelcheckpoint" in lightning_config:
         modelckpt_cfg = lightning_config.modelcheckpoint
