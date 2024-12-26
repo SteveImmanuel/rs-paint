@@ -140,10 +140,15 @@ class FrozenCLIPImageEmbedder(AbstractEncoder):
     def __init__(self, version="openai/clip-vit-large-patch14"):
         super().__init__()
         self.transformer = CLIPVisionModel.from_pretrained(version)
-        self.final_ln = LayerNorm(1024)
+        if version == 'apple/DFN5B-CLIP-ViT-H-14-378':
+            ndim = 1280
+        else:
+            ndim = 1024
+
+        self.final_ln = LayerNorm(ndim)
         self.mapper = Transformer(
                 1,
-                1024,
+                ndim,
                 5,
                 1,
             )
@@ -176,10 +181,15 @@ class FrozenCLIPTextEmbedder(AbstractEncoder):
     def __init__(self, version="openai/clip-vit-large-patch14"):
         super().__init__()
         self.transformer = CLIPTextModel.from_pretrained(version)
-        self.final_ln = LayerNorm(768)
+        if version == 'apple/DFN5B-CLIP-ViT-H-14-378':
+            ndim = 1024
+        else:
+            ndim = 768
+
+        self.final_ln = LayerNorm(ndim)
         self.mapper = Transformer(
                 1,
-                768,
+                ndim,
                 5,
                 1,
             )
@@ -210,18 +220,18 @@ class FrozenCLIPTextEmbedder(AbstractEncoder):
 if __name__ == "__main__":
     # from ldm.util import count_params
     from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained('openai/clip-vit-large-patch14')
+    tokenizer = AutoTokenizer.from_pretrained('apple/DFN5B-CLIP-ViT-H-14-378')
     # print(tokenizer)
     tokens = tokenizer('a top-down satellite image of a car', return_tensors='pt', padding='max_length', max_length=20)
-    print(tokens)
-    cliptext = FrozenCLIPTextEmbedder('openai/clip-vit-large-patch14')
+    print(tokens.input_ids.shape, tokens.attention_mask.shape)
+    cliptext = FrozenCLIPTextEmbedder('apple/DFN5B-CLIP-ViT-H-14-378')
     out = cliptext(tokens.input_ids, tokens.attention_mask)
     print(out.shape)
 
 
-    clipvision = FrozenCLIPImageEmbedder('openai/clip-vit-large-patch14')
-    image = torch.randn(1, 3, 224, 224)
-    out = clipvision(image)
-    print(out.shape)
+    # clipvision = FrozenCLIPImageEmbedder('openai/clip-vit-large-patch14')
+    # image = torch.randn(1, 3, 224, 224)
+    # out = clipvision(image)
+    # print(out.shape)
     # model = FrozenCLIPEmbedder()
     # count_params(model, verbose=True)
