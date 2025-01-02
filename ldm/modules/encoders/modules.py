@@ -216,6 +216,52 @@ class FrozenCLIPTextEmbedder(AbstractEncoder):
     def encode(self, tokens, attention_mask):
         return self(tokens, attention_mask)
 
+class FrozenCLIPEmbedder(AbstractEncoder):
+    """Uses the CLIP transformer encoder for text (from Hugging Face)"""
+    def __init__(self, version="openai/clip-vit-large-patch14", text_cond_weight=0.5):
+        super().__init__()
+        if version == 'apple/DFN5B-CLIP-ViT-H-14-378':
+            ndim = 1024
+        else:
+            ndim = 768
+
+        self.transformer = CLIPModel.from_pretrained(version)
+        self.text_cond_weight = text_cond_weight
+        self.final_ln = LayerNorm(ndim)
+        self.mapper = Transformer(
+                1,
+                ndim,
+                5,
+                1,
+            )
+
+        self.freeze()
+
+    def freeze(self):
+        self.transformer = self.transformer.eval()
+        for param in self.parameters():
+            param.requires_grad = False
+        for param in self.mapper.parameters():
+            param.requires_grad = True
+        for param in self.final_ln.parameters():
+            param.requires_grad = True
+
+    def forward(self, image, tokens, attention_mask):
+        img_feat = self.transformer.get_image_features(pixel_values=image)
+        txt_feat = self.transformer.get_text_features(input_ids=tokens, attention_mask=attention_mask)
+        
+        img_feat = img_feat.unsqueeze(1)
+        txt_feat = txt_feat.unsqueeze(1)
+
+        feat = self.text_cond_weight * txt_feat + (1 - self.text_cond_weight) * img_feat
+        feat = self.mapper(feat)
+        feat = self.final_ln(feat)
+        
+        return feat
+
+    def encode(self, image, tokens, attention_mask):
+        return self(image, tokens, attention_mask)
+
 
 if __name__ == "__main__":
     # from ldm.util import count_params
@@ -223,15 +269,9 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained('apple/DFN5B-CLIP-ViT-H-14-378')
     # print(tokenizer)
     tokens = tokenizer('a top-down satellite image of a car', return_tensors='pt', padding='max_length', max_length=20)
+    image = torch.randn(1, 3, 378, 378)
     print(tokens.input_ids.shape, tokens.attention_mask.shape)
-    cliptext = FrozenCLIPTextEmbedder('apple/DFN5B-CLIP-ViT-H-14-378')
-    out = cliptext(tokens.input_ids, tokens.attention_mask)
-    print(out.shape)
+    model = FrozenCLIPEmbedder('apple/DFN5B-CLIP-ViT-H-14-378')
+    feat = model(image, tokens.input_ids, tokens.attention_mask)
 
-
-    # clipvision = FrozenCLIPImageEmbedder('openai/clip-vit-large-patch14')
-    # image = torch.randn(1, 3, 224, 224)
-    # out = clipvision(image)
-    # print(out.shape)
-    # model = FrozenCLIPEmbedder()
-    # count_params(model, verbose=True)
+    print(feat.shape)
