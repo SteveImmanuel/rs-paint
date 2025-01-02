@@ -135,6 +135,14 @@ def get_parser(**parser_kwargs):
         default=False,
         help="Train from scratch",
     )
+    parser.add_argument(
+        "--ignore_conditioning_ckpt",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
+        help="Train from scratch",
+    )
     return parser
 
 
@@ -357,7 +365,7 @@ class ImageLogger(Callback):
         if (self.check_frequency(check_idx) and  # batch_idx % self.batch_freq == 0
                 hasattr(pl_module, "log_images") and
                 callable(pl_module.log_images) and
-                self.max_images > 0) or (split != 'val' and batch_idx % 50 == 0):
+                self.max_images > 0) or (split != 'train' and batch_idx % 50 == 0):
             logger = type(pl_module.logger)
 
             is_train = pl_module.training
@@ -510,6 +518,11 @@ if __name__ == "__main__":
             ckpt_file={key:value for key,value in ckpt_file.items() if not ( key[:6]=='model.')}
             model.load_state_dict(ckpt_file,strict=False)
             print("Train from scratch!")
+        elif opt.ignore_conditioning_ckpt:
+            ckpt_file=torch.load(opt.pretrained_model,map_location='cpu')['state_dict']
+            ckpt_file={key:value for key,value in ckpt_file.items() if not key.startswith('cond_stage_model')}
+            model.load_state_dict(ckpt_file,strict=False)
+            print("Load Stable Diffusion v1-4 without conditioning ckpt!")
         else:
             model.load_state_dict(torch.load(opt.pretrained_model,map_location='cpu')['state_dict'],strict=False)
             print("Load Stable Diffusion v1-4!")
@@ -558,7 +571,7 @@ if __name__ == "__main__":
     if hasattr(model, "monitor"):
         print(f"Monitoring {model.monitor} as checkpoint metric.")
         default_modelckpt_cfg["params"]["monitor"] = model.monitor
-        default_modelckpt_cfg["params"]["save_top_k"] = 2
+        default_modelckpt_cfg["params"]["save_top_k"] = 1
 
     if "modelcheckpoint" in lightning_config:
         modelckpt_cfg = lightning_config.modelcheckpoint
