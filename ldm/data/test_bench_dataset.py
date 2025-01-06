@@ -26,7 +26,7 @@ import copy
 import math
 from functools import partial
 import albumentations as A
-import clip
+# import clip
 import bezier
 
 def bbox_process(bbox):

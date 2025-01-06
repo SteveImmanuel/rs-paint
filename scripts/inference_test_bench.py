@@ -22,7 +22,7 @@ from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionS
 from transformers import AutoFeatureExtractor
 
 from ldm.data.test_bench_dataset import COCOImageDataset
-import clip
+# import clip
 from torchvision.transforms import Resize
 # load safety model
 safety_model_id = "CompVis/stable-diffusion-safety-checker"

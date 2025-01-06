@@ -19,15 +19,9 @@ from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.models.diffusion.plms import PLMSSampler
 
 from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
-from transformers import AutoFeatureExtractor
+from transformers import AutoFeatureExtractor, AutoTokenizer
 # import clip
 from torchvision.transforms import Resize
-wm = "Paint-by-Example"
-wm_encoder = WatermarkEncoder()
-wm_encoder.set_watermark('bytes', wm.encode('utf-8'))
-safety_model_id = "CompVis/stable-diffusion-safety-checker"
-safety_feature_extractor = AutoFeatureExtractor.from_pretrained(safety_model_id)
-# safety_checker = StableDiffusionSafetyChecker.from_pretrained(safety_model_id)
 
 def chunk(it, size):
     it = iter(it)
@@ -75,14 +69,6 @@ def load_model_from_config(config, ckpt, verbose=False):
     return model
 
 
-def put_watermark(img, wm_encoder=None):
-    if wm_encoder is not None:
-        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-        img = wm_encoder.encode(img, 'dwtDct')
-        img = Image.fromarray(img[:, :, ::-1])
-    return img
-
-
 def load_replacement(x):
     try:
         hwc = x.shape
@@ -93,15 +79,6 @@ def load_replacement(x):
     except Exception:
         return x
 
-
-def check_safety(x_image):
-    safety_checker_input = safety_feature_extractor(numpy_to_pil(x_image), return_tensors="pt")
-    x_checked_image, has_nsfw_concept = safety_checker(images=x_image, clip_input=safety_checker_input.pixel_values)
-    assert x_checked_image.shape[0] == len(has_nsfw_concept)
-    for i in range(len(has_nsfw_concept)):
-        if has_nsfw_concept[i]:
-            x_checked_image[i] = load_replacement(x_checked_image[i])
-    return x_checked_image, has_nsfw_concept
 
 def get_tensor(normalize=True, toTensor=True):
     transform_list = []
@@ -133,6 +110,18 @@ def main():
         nargs="?",
         help="dir to write results to",
         default="outputs/txt2img-samples"
+    )
+    parser.add_argument(
+        "--prompt",
+        type=str,
+        default=None,
+        help="prompt to control the generation",
+    )
+    parser.add_argument(
+        "--text_cond_weight",
+        type=float,
+        default=0.5,
+        help="weight of text conditioning",
     )
     parser.add_argument(
         "--skip_grid",
@@ -270,9 +259,11 @@ def main():
 
     config = OmegaConf.load(f"{opt.config}")
     model = load_model_from_config(config, f"{opt.ckpt}")
-
+    model.text_cond_weight = opt.text_cond_weight
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = model.to(device)
+
+    tokenizer = AutoTokenizer.from_pretrained('apple/DFN5B-CLIP-ViT-H-14-378')
 
     if opt.plms:
         sampler = PLMSSampler(model)
@@ -306,7 +297,7 @@ def main():
                 img_p = Image.open(opt.image_path).convert("RGB")
                 image_tensor = get_tensor()(img_p)
                 image_tensor = image_tensor.unsqueeze(0)
-                ref_p = Image.open(opt.reference_path).convert("RGB").resize((224,224))
+                ref_p = Image.open(opt.reference_path).convert("RGB").resize((378,378))
                 ref_tensor=get_tensor_clip()(ref_p)
                 ref_tensor = ref_tensor.unsqueeze(0)
                 mask=Image.open(opt.mask_path).convert("L")
@@ -323,8 +314,19 @@ def main():
                 uc = None
                 if opt.scale != 1.0:
                     uc = model.learnable_vector
-                c = model.get_learned_conditioning(ref_tensor.to(torch.float16))
-                c = model.proj_out(c)
+
+                if opt.prompt:
+                    text_feat = tokenizer(opt.prompt, return_tensors='pt', padding='max_length', max_length=20)
+                    tokens = text_feat.input_ids.to(device)
+                    att_mask = text_feat.attention_mask.to(device)
+                else:
+                    tokens = torch.zeros([1, 20], dtype=torch.long, device=device)
+                    att_mask = torch.zeros([1, 20], dtype=torch.long, device=device)
+                
+                image_c, text_c = model.get_learned_conditioning((ref_tensor, tokens, att_mask))
+                image_c = model.proj_out(image_c)
+                text_c = model.proj_out_text(text_c)
+                c = opt.text_cond_weight * text_c + (1-opt.text_cond_weight) * image_c
                 inpaint_mask=test_model_kwargs['inpaint_mask']
                 z_inpaint = model.encode_first_stage(test_model_kwargs['inpaint_image'])
                 z_inpaint = model.get_first_stage_encoding(z_inpaint).detach()
@@ -374,14 +376,12 @@ def main():
                         grid = make_grid(grid)
                         grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
                         img = Image.fromarray(grid.astype(np.uint8))
-                        img = put_watermark(img, wm_encoder)
                         img.save(os.path.join(grid_path, 'grid-'+filename[:-4]+'_'+str(opt.seed)+'.png'))
                         
 
 
                         x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                         img = Image.fromarray(x_sample.astype(np.uint8))
-                        img = put_watermark(img, wm_encoder)
                         img.save(os.path.join(result_path, filename[:-4]+'_'+str(opt.seed)+".png"))
                         
                         mask_save=255.*rearrange(un_norm(inpaint_mask[i]).cpu(), 'c h w -> h w c').numpy()
