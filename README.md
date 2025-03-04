@@ -1,13 +1,35 @@
-# Paint by Example: Exemplar-based Image Editing with Diffusion Models
-![Teaser](figure/teaser.png)
-### [Paper](https://arxiv.org/abs/2211.13227) | [Huggingface Demo](https://huggingface.co/spaces/Fantasy-Studio/Paint-by-Example) 
-<!-- <br> -->
-[Binxin Yang](https://orcid.org/0000-0003-4110-1986), [Shuyang Gu](http://home.ustc.edu.cn/~gsy777/), [Bo Zhang](https://bo-zhang.me/), [Ting Zhang](https://www.microsoft.com/en-us/research/people/tinzhan/), [Xuejin Chen](http://staff.ustc.edu.cn/~xjchen99/), [Xiaoyan Sun](http://staff.ustc.edu.cn/~xysun720/), [Dong Chen](https://www.microsoft.com/en-us/research/people/doch/) and [Fang Wen](https://www.microsoft.com/en-us/research/people/fangwen/).
-<!-- <br> -->
+# Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model
 
-## Abstract
->Language-guided image editing has achieved great success recently. In this paper, for the first time, we investigate exemplar-guided image editing for more precise control. We achieve this goal by leveraging self-supervised training to disentangle and re-organize the source image and the exemplar. However, the naive approach will cause obvious fusing artifacts. We carefully analyze it and propose an information bottleneck and strong augmentations to avoid the trivial solution of directly copying and pasting the exemplar image. Meanwhile, to ensure the controllability of the editing process, we design an arbitrary shape mask for the exemplar image and leverage the classifier-free guidance to increase the similarity to the exemplar image. The whole framework involves a single forward of the diffusion model without any iterative optimization. We demonstrate that our method achieves an impressive performance and enables controllable editing on in-the-wild images with high fidelity.
->
+**ICLR Machine Learning for Remote Sensing Workshop, 2025 (Oral)**
+
+
+This repo contains the official code for training and generation for the paper "Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model".
+
+
+<!-- [![Paper](https://img.shields.io/badge/arXiv-PDF-b31b1b)](https://arxiv.org/abs/2312.02145) -->
+<!-- [![Hugging Face Demo](https://img.shields.io/badge/🤗%20Hugging%20Face%20(LCM)-Space-yellow)](https://huggingface.co/spaces/prs-eth/marigold-lcm) -->
+[![Website](figure/badge-website.svg)](https://steveimmanuel.github.io/rs-paint)
+[![License](https://img.shields.io/badge/License-Apache--2.0-929292)](https://www.apache.org/licenses/LICENSE-2.0)
+
+[Steve Andreas Immanuel](https://steveimm.id), [Woojin Cho](https://woojin-cho.github.io/), [Junhyuk Heo](https://rokmc1250.github.io/), Darongsae Kwon.
+
+We introduce a image-conditioned diffusion-based approach for to create diverse set of novel-classes samples for semantic segmentation in few-shot settings in remote sensing domain. By ensuring semantic consistency using cosine similarity between the generated samples and the conditioning image, and using the Segment Anything Model (SAM) to obtain the precise segmentation, our method can train off-the-shelf segmentation models with high-quality synthetic data, significantly improving performance in low-data scenarios.
+
+![Teaser](figure/teaser.jpg)
+
+
+## 📢 News
+2024-05-28: Training code is released.<br>
+2024-03-23: Added [LCM v1.0](https://huggingface.co/prs-eth/marigold-lcm-v1-0) for faster inference - try it out at <a href="https://huggingface.co/spaces/prs-eth/marigold-lcm"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face%20(LCM)-Space-yellow" height="16"></a><br>
+2024-03-04: Accepted to CVPR 2024. <br>
+2023-12-22: Contributed to Diffusers [community pipeline](https://github.com/huggingface/diffusers/tree/main/examples/community#marigold-depth-estimation). <br>
+2023-12-19: Updated [license](LICENSE.txt) to Apache License, Version 2.0.<br>
+2023-12-08: Added
+<a href="https://huggingface.co/spaces/toshas/marigold"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow" height="16"></a> - try it out with your images for free!<br>
+2023-12-05: Added <a href="https://colab.research.google.com/drive/12G8reD13DdpMie5ZQlaFNo2WCGeNUH-u?usp=sharing"><img src="doc/badges/badge-colab.svg" height="16"></a> - dive deeper into our inference pipeline!<br>
+2023-12-04: Added <a href="https://arxiv.org/abs/2312.02145"><img src="https://img.shields.io/badge/arXiv-PDF-b31b1b" height="16"></a>
+paper and inference code (this repository).
+
 ## News
 - *2023-11-28* The recent work Asymmetric VQGAN improves the preservation of details in non-masked regions. For comprehensive details, please refer to the associated [paper](https://arxiv.org/abs/2306.04632), [github]( https://github.com/buxiangzhiren/Asymmetric_VQGAN).
 - *2023-05-13* Release code for quantitative results.
@@ -110,62 +132,6 @@ or simply run:
 sh train.sh
 ```
 
-## Test Benchmark
-We build a test benchmark for quantitative analysis. Specifically, we manually select 3500 source images from MSCOCO validation set, each image contains only one bounding box. Then we manually retrieve a reference image patch from MSCOCO training set. The reference image usually shares a similar semantic with mask region to ensure the combination is reasonable. We named it as COCO Exemplar-based image Editing benchmark, abbreviated as COCOEE. This test benchmark can be downloaded from [Google Drive](https://drive.google.com/file/d/18wO_wSFF-GPNxWmO1bt6LdjubXcttqtO/view?usp=share_link).
-
-## Quantitative Results
-By default, we assume that the COCOEE is downloaded and saved to the directory `test_bench`. To generate the results of test bench, you can use `scripts/inference_test_bench.py`. For example, 
-```
-python scripts/inference_test_bench.py \
---plms \
---outdir results/test_bench \
---config configs/v1.yaml \
---ckpt checkpoints/model.ckpt \
---scale 5
-```
-or simply run:
-```
-bash inference_test_bench.sh
-```
-### FID Score
-By default, we assume that the test set of COCO2017 is downloaded and saved to the directory `dataset`.
-The data structure is like this:
-```
-dataset
-├── coco
-│  ├── test2017
-│  │  ├── xxx.jpg
-│  │  ├── xxx.jpg
-│  │  ├── ...
-│  │  ├── xxx.jpg
-```
-Then convert the images into square images with 512 solution.
-  ```
-  python scripts/create_square_gt_for_fid.py
-  ```
-To calculate FID score, simply run:
-```
-python eval_tool/fid/fid_score.py --device cuda \
-test_bench/test_set_GT \
-results/test_bench/results
-```
-### QS Score
-Please download the model weights for QS score from [Google Drive](https://drive.google.com/file/d/1Ce2cSQ8UttxcEk03cjfJgaBwdhSPyuHI/view?usp=share_link) and save the model to directory `eval_tool/gmm`.
-To calculate QS score, simply run:
-```
-python eval_tool/gmm/gmm_score_coco.py results/test_bench/results \
---gmm_path eval_tool/gmm/coco2017_gmm_k20 \
---gpu 1
-```
-
-### CLIP Score
-To calculate CLIP score, simply run:
-```
-python eval_tool/clip_score/region_clip_score.py \
---result_dir results/test_bench/results
-```
-
-
 ## Citing Paint by Example
 
 ```
@@ -179,13 +145,8 @@ python eval_tool/clip_score/region_clip_score.py \
 
 ## Acknowledgements
 
-This code borrows heavily from [Stable Diffusion](https://github.com/CompVis/stable-diffusion). We also thank the contributors of [OpenAI's ADM codebase](https://github.com/openai/guided-diffusion) and [https://github.com/lucidrains/denoising-diffusion-pytorch](https://github.com/lucidrains/denoising-diffusion-pytorch).
+This code is mainly based on [Paint by Example](https://github.com/Fantasy-Studio/Paint-by-Example). We thank the authors for their great work.
 
 ## Maintenance
 
 Please open a GitHub issue for any help. If you have any questions regarding the technical details, feel free to contact us.
-
-## License
-The codes and the pretrained model in this repository are under the CreativeML OpenRAIL M license as specified by the LICENSE file.
-
-The test benchmark, COCOEE, belongs to the COCO Consortium and are licensed under a Creative Commons Attribution 4.0 License.
