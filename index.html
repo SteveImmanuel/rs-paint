@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <!-- Meta tags for social media banners, these should be filled in appropriatly as they are your "business card" -->
+  <!-- Replace the content tag with appropriate information -->
+  <meta name="description" content="Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model">
+  <meta property="og:title" content="RS-Paint" />
+  <meta property="og:description" content="Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model" />
+  <meta property="og:url" content="https://steveimmanuel.github.io/rs-paint" />
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X630-->
+  <meta property="og:image" content="static/images/arch.jpg" />
+  <meta property="og:image:width" content="2089" />
+  <meta property="og:image:height" content="831" />
+
+
+  <meta name="keywords" content="diffusion,paint,fewshot,segmentation,remote sensing">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+  <title>RS-Paint</title>
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+</head>
+
+<body>
+
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">Tackling Few-Shot Segmentation<br> in Remote Sensing<br> via Inpainting Diffusion Model</h1>
+            <div class="is-size-5 publication-authors">
+              <!-- Paper authors -->
+              <span class="author-block">
+                <a href="https://steveimm.id" target="_blank">Steve Andreas Immanuel</a>,</span>
+                <span class="author-block">
+                <a href="https://woojin-cho.github.io" target="_blank">Woojin Cho</a>,</span>
+              <span class="author-block">
+                <a href="https://rokmc1250.github.io/" target="_blank">Junhyuk Heo</a></sup>,</span>
+              </span>
+              <a href="https://www.linkedin.com/in/darongsaekwon/" target="_blank">Darongsae Kwon</a>
+              </span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">TelePIX<br>ICLR 2025 Machine Learning for Remote Sensing Workshop <b>(Oral)</b></span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <!-- Arxiv PDF link -->
+                <span class="link-block">
+                  <a href="https://openreview.net/pdf?id=gk2m2OIKMs" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                    </span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+
+                <!-- Supplementary PDF link
+                    <span class="link-block">
+                      <a href="static/pdfs/supplementary_material.pdf" target="_blank"
+                      class="external-link button is-normal is-rounded is-dark">
+                      <span class="icon">
+                        <i class="fas fa-file-pdf"></i>
+                      </span>
+                      <span>Supplementary</span>
+                    </a>
+                  </span> -->
+
+                <!-- Github link -->
+                <span class="link-block">
+                  <a href="https://github.com/SteveImmanuel/implisat" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+
+                <!-- ArXiv abstract Link -->
+                <!-- <span class="link-block">
+                  <a href="https://arxiv.org/abs/<ARXIV PAPER ID>" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span> -->
+
+                <span class="link-block">
+                  <a href="https://github.com/SteveImmanuel/implisat/releases/tag/1.0"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="far fa-images"></i>
+                    </span>
+                    <span>Data</span>
+                  </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Teaser video-->
+  <section class="hero teaser">
+    <div class="container is-max-desktop">
+      <div class="hero-body">
+        <img src="static/images/arch.jpg" alt="main_arch" />
+        <h2 class="subtitle has-text-centered">
+          <b>Overall pipeline of the proposed approach</b>.<br />An inpainting diffusion model generates novel-class samples, and SAM refines the segmentation masks. The results are used for training samples to improve model performance on few-shot settings.
+        </h2>
+      </div>
+    </div>
+  </section>
+  <!-- End teaser video -->
+
+  <!-- Paper abstract -->
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+              Limited data is a common problem in remote sensing due to the high cost of obtaining annotated samples. 
+              In the few-shot segmentation task, models are typically trained on base classes with abundant annotations and later adapted to novel classes with limited examples. 
+              However, this often necessitates specialized model architectures or complex training strategies. 
+              Instead, we propose a simple approach that leverages diffusion models to generate diverse variations of novel-class objects within a given scene, conditioned by the limited examples of the novel classes. 
+              By framing the problem as an image inpainting task, we synthesize plausible instances of novel classes under various environments, effectively increasing the number of samples for the novel classes and mitigating overfitting. 
+              The generated samples are then assessed using a cosine similarity metric to ensure semantic consistency with the novel classes. 
+              Additionally, we employ Segment Anything Model (SAM) to segment the generated samples and obtain precise annotations. 
+              By using high-quality synthetic data, we can directly fine-tune off-the-shelf segmentation models. 
+              Experimental results demonstrate that our method significantly enhances segmentation performance in low-data regimes, highlighting its potential for real-world remote sensing applications.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- End paper abstract -->
+
+
+  <!-- Image carousel -->
+  <section class="hero is-small">
+    <div class="hero-body">
+      <div class="columns is-centered has-text-centered">
+        <h2 class="title is-3">Qualitative Results</h2>
+      </div>
+      <div class="container">
+        <div id="results-carousel" class="carousel results-carousel">
+          <div class="item">
+            <!-- Your image here -->
+            <img src="static/images/samples-1.jpeg" alt="basketball" />
+            <h2 class="subtitle has-text-centered">
+              Inpainting result for novel class <b>Basketball Field</b> from OpenEarthMap dataset.
+            </h2>
+          </div>
+          <div class="item">
+            <!-- Your image here -->
+            <img src="static/images/samples-2.jpeg" alt="agriculture" />
+            <h2 class="subtitle has-text-centered">
+              Inpainting result for novel class <b>Agriculture Land</b> from OpenEarthMap dataset.
+            </h2>
+          </div>
+          <div class="item">
+            <!-- Your image here -->
+            <img src="static/images/samples-3.jpeg" alt="boat" />
+            <h2 class="subtitle has-text-centered">
+              Inpainting result for novel class <b>Boat</b> from OpenEarthMap dataset.
+            </h2>
+          </div>
+          <div class="item">
+            <!-- Your image here -->
+            <img src="static/images/samples-4.jpeg" alt="bridge" />
+            <h2 class="subtitle has-text-centered">
+              Inpainting result for novel class <b>Bridge</b> from OpenEarthMap dataset.
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- End image carousel -->
+
+  <!-- Image carousel -->
+  <section class="hero is-small">
+    <div class="hero-body">
+      <div class="columns is-centered has-text-centered">
+        <h2 class="title is-3">Quantitative Results</h2>
+      </div>
+      <div class="container is-centered has-text-centered">
+          <!-- Your image here -->
+          <img src="static/images/tab.png" alt="cairo" />
+          <h2 class="subtitle has-text-centered">
+            IoU comparison of various methods on different object classes. <br>The <u>underline</u> indicates best results in each group and the <b>boldface</b> indicates best results overall.
+          </h2>
+      </div>
+    </div>
+  </section>
+  <!-- End image carousel -->
+
+
+
+  <!--BibTex citation -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">Citation</h2>
+      <pre><code>@inproceedings{2025rspaint,
+  title={Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model},
+  author={Immanuel, Steve Andreas and Cho, Woojin and Heo, Junhyuk and Kwon, Darongsae},
+  booktitle={Workshop on Machine Learning and Compression, NeurIPS 2024}
+}</code></pre>
+    </div>
+  </section>
+  <!--End BibTex citation -->
+
+
+  <footer class="footer-v2">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+
+            <p>
+              This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template"
+                target="_blank">Academic Project Page Template</a> which was adopted from the <a
+                href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+              You are free to borrow the source code of this website, we just ask that you link back to this page in the
+              footer. <br> This website is licensed under a <a rel="license"
+                href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+                Commons Attribution-ShareAlike 4.0 International License</a>.
+            </p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Statcounter tracking code -->
+
+  <!-- You can add a tracker to track page visits by creating an account at statcounter.com -->
+
+  <!-- End of Statcounter Code -->
+
+</body>
+
+</html>
