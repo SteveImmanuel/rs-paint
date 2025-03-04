@@ -732,7 +732,7 @@ class LatentDiffusion(DDPM):
                 image_c, text_c = self.get_learned_conditioning(c)
                 image_c = self.proj_out(image_c)
                 text_c = self.proj_out_text(text_c)
-                c = self.text_cond_weight*text_c + (1-self.text_cond_weight)*image_c
+                c = self.text_cond_weight*text_c + (1 - self.text_cond_weight)*image_c
 
             #     if isinstance(xc, dict) or isinstance(xc, list):
             #         # import pudb; pudb.set_trace()

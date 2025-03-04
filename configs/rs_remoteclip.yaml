@@ -1,6 +1,6 @@
 model:
   base_learning_rate: 1.0e-05
-  target: ldm.models.diffusion.ddpm_n.LatentDiffusion
+  target: ldm.models.diffusion.ddpm.LatentDiffusion
   params:
     linear_start: 0.00085
     linear_end: 0.0120
@@ -17,7 +17,6 @@ model:
     u_cond_percent: 0.2
     scale_factor: 0.18215
     use_ema: False
-    text_cond_weight: 0.5
 
     scheduler_config: # 10000 warmup steps
       target: ldm.lr_scheduler.LambdaLinearScheduler
@@ -70,14 +69,7 @@ model:
           target: torch.nn.Identity
 
     cond_stage_config:
-      target: ldm.modules.encoders.modules.FrozenCLIPImageEmbedder
-      params:
-        version: apple/DFN5B-CLIP-ViT-H-14-378
-
-    text_cond_stage_config:
-      target: ldm.modules.encoders.modules.FrozenCLIPTextEmbedder
-      params:
-        version: apple/DFN5B-CLIP-ViT-H-14-378
+      target: ldm.modules.encoders.modules.FrozenRemoteCLIPImageEmbedder
 
 data:
   target: main.DataModuleFromConfig
@@ -116,7 +108,7 @@ data:
 
 lightning:
   trainer:
-    max_epochs: 100
+    max_epochs: 200
     num_nodes: 1
     accelerator: 'gpu'
     gpus: "0,1,2,3,4,5,6,7"
