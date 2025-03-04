@@ -8,6 +8,8 @@ from transformers import CLIPTokenizer, CLIPTextModel,CLIPVisionModel,CLIPModel
 from ldm.modules.x_transformer import Encoder, TransformerWrapper  # TODO: can we directly rely on lucidrains code and simply add this as a reuirement? --> test
 from .xf import LayerNorm, Transformer
 import math
+import random
+import open_clip
 
 class AbstractEncoder(nn.Module):
     def __init__(self):
@@ -175,6 +177,46 @@ class FrozenCLIPImageEmbedder(AbstractEncoder):
     def encode(self, image):
         return self(image)
 
+class FrozenRemoteCLIPImageEmbedder(AbstractEncoder):
+    """Uses the CLIP transformer encoder for text (from Hugging Face)"""
+    def __init__(self, ckpt_path="checkpoints/remoteclip.pt"):
+        super().__init__()
+        clip, _, _ = open_clip.create_model_and_transforms('ViT-L-14')
+        ckpt = torch.load(ckpt_path, map_location='cpu')
+        clip.load_state_dict(ckpt)
+
+        self.transformer = clip.visual
+        self.transformer.proj = None
+
+        self.final_ln = LayerNorm(1024)
+        self.mapper = Transformer(
+                1,
+                1024,
+                5,
+                1,
+            )
+
+        self.freeze()
+
+    def freeze(self):
+        self.transformer = self.transformer.eval()
+        for param in self.parameters():
+            param.requires_grad = False
+        for param in self.mapper.parameters():
+            param.requires_grad = True
+        for param in self.final_ln.parameters():
+            param.requires_grad = True
+
+    def forward(self, image):
+        z = self.transformer(image)
+        z = z.unsqueeze(1)
+        z = self.mapper(z)
+        z = self.final_ln(z)
+        return z
+
+    def encode(self, image):
+        return self(image)
+
 
 class FrozenCLIPTextEmbedder(AbstractEncoder):
     """Uses the CLIP transformer encoder for text (from Hugging Face)"""
@@ -253,6 +295,8 @@ class FrozenCLIPEmbedder(AbstractEncoder):
         img_feat = img_feat.unsqueeze(1)
         txt_feat = txt_feat.unsqueeze(1)
 
+        # weight = random.uniform(0, 1)
+        # feat = weight * txt_feat + (1 - weight) * img_feat
         feat = self.text_cond_weight * txt_feat + (1 - self.text_cond_weight) * img_feat
         feat = self.mapper(feat)
         feat = self.final_ln(feat)
@@ -265,13 +309,18 @@ class FrozenCLIPEmbedder(AbstractEncoder):
 
 if __name__ == "__main__":
     # from ldm.util import count_params
-    from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained('apple/DFN5B-CLIP-ViT-H-14-378')
-    # print(tokenizer)
-    tokens = tokenizer('a top-down satellite image of a car', return_tensors='pt', padding='max_length', max_length=20)
-    image = torch.randn(1, 3, 378, 378)
-    print(tokens.input_ids.shape, tokens.attention_mask.shape)
-    model = FrozenCLIPEmbedder('apple/DFN5B-CLIP-ViT-H-14-378')
-    feat = model(image, tokens.input_ids, tokens.attention_mask)
+    # from transformers import AutoTokenizer
+    # tokenizer = AutoTokenizer.from_pretrained('apple/DFN5B-CLIP-ViT-H-14-378')
+    # # print(tokenizer)
+    # tokens = tokenizer('a top-down satellite image of a car', return_tensors='pt', padding='max_length', max_length=20)
+    # image = torch.randn(1, 3, 378, 378)
+    # print(tokens.input_ids.shape, tokens.attention_mask.shape)
+    # model = FrozenCLIPEmbedder('apple/DFN5B-CLIP-ViT-H-14-378')
+    # feat = model(image, tokens.input_ids, tokens.attention_mask)
 
+    # print(feat.shape)
+
+    model = FrozenRemoteCLIPImageEmbedder()
+    image = torch.randn(1, 3, 224, 224)
+    feat = model.encode(image)
     print(feat.shape)

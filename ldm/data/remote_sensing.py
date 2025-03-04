@@ -70,8 +70,8 @@ class RemoteSensingDataset(data.Dataset):
         self.kernel = np.ones((1, 1), np.uint8)
         self.tokenizer = AutoTokenizer.from_pretrained(args['version'])
         self.random_trans=A.Compose([
-            # A.Resize(height=224,width=224),
-            A.Resize(height=378,width=378),
+            A.Resize(height=224,width=224),
+            # A.Resize(height=378,width=378),
             A.HorizontalFlip(p=0.5),
             A.Rotate(limit=20),
             A.Blur(p=0.3),
