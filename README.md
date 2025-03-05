@@ -95,8 +95,7 @@ data:
 ```
 Optionally, you can write custom dataloader and placing it in `ldm/data` directory. Then, change the `target` key to the custom dataloader.
 
-### Training
-To train a new model on Open-Images, you can use `main.py`. For example,
+To start training, use the following command:
 ```
 python -u main.py \
 --logdir <log path> --pretrained_model checkpoints/checkpoints/sd_inpaint_samrs_ep74.ckpt \
