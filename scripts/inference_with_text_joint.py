@@ -311,6 +311,7 @@ def main():
                 test_model_kwargs['inpaint_mask']=mask_tensor.to(device)
                 test_model_kwargs['inpaint_image']=inpaint_image.to(device)
                 ref_tensor=ref_tensor.to(device)
+                
                 uc = None
                 if opt.scale != 1.0:
                     uc = model.learnable_vector
