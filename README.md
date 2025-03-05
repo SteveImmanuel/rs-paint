@@ -26,7 +26,7 @@ conda activate rspaint
 ```
 
 ## Checkpoint Weights
-All required checkpoints are available in the [release](https://github.com/SteveImmanuel/rs-paint/releases) page. 
+All required checkpoints are available in [huggingface](https://huggingface.co/SteveImmanuel/RSPaint). 
 
 Download `sd_inpaint_samrs_ep74.ckpt` and `remoteclip.pt` and save them to the `checkpoints` directory. Optionally, if you also want to perform the mask refinement, download SAM checkpoint and also save it to the `checkpoints` directory.
 
