@@ -180,3 +180,5 @@ models
 
 *.png
 *.tif
+
+fewshotset
