@@ -181,12 +181,14 @@ class FrozenRemoteCLIPImageEmbedder(AbstractEncoder):
     """Uses the CLIP transformer encoder for text (from Hugging Face)"""
     def __init__(self, ckpt_path="checkpoints/remoteclip.pt"):
         super().__init__()
-        clip, _, _ = open_clip.create_model_and_transforms('ViT-L-14')
+        clip, _, preprocess = open_clip.create_model_and_transforms('ViT-L-14')
         ckpt = torch.load(ckpt_path, map_location='cpu')
         clip.load_state_dict(ckpt)
 
         self.transformer = clip.visual
+        self.projection = self.transformer.proj
         self.transformer.proj = None
+        self.preprocess = preprocess
 
         self.final_ln = LayerNorm(1024)
         self.mapper = Transformer(
@@ -213,6 +215,9 @@ class FrozenRemoteCLIPImageEmbedder(AbstractEncoder):
         z = self.mapper(z)
         z = self.final_ln(z)
         return z
+    
+    def get_visual_clip_features(self, image):
+        return self.transformer(image) @ self.projection
 
     def encode(self, image):
         return self(image)
