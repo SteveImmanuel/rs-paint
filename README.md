@@ -6,9 +6,9 @@
 This repo contains the official code for training and generation for the paper "Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model".
 
 
-<!-- [![Paper](https://img.shields.io/badge/arXiv-PDF-b31b1b)](https://arxiv.org/abs/2312.02145) -->
 <!-- [![Hugging Face Demo](https://img.shields.io/badge/🤗%20Hugging%20Face%20(LCM)-Space-yellow)](https://huggingface.co/spaces/prs-eth/marigold-lcm) -->
 [![Website](figure/badge-website.svg)](https://steveimmanuel.github.io/rs-paint)
+[![Paper](https://img.shields.io/badge/arXiv-PDF-b31b1b)](https://arxiv.org/abs/2503.03785)
 [![License](https://img.shields.io/badge/License-Apache--2.0-929292)](https://www.apache.org/licenses/LICENSE-2.0)
 
 [Steve Andreas Immanuel](https://steveimm.id) | [Woojin Cho](https://woojin-cho.github.io/) | [Junhyuk Heo](https://rokmc1250.github.io/) | [Darongsae Kwon](https://www.linkedin.com/in/darongsaekwon).
@@ -41,7 +41,12 @@ Follow along the steps in the provided notebook [`notebooks/generate_samples.ipy
 ### Data preparing
 To train the model, you can use any dataset with bounding box annotations.
 
-The data structure must be like this:
+The data structure must be like th@article{immanuel2025tackling,
+  title={Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model},
+  author={Immanuel, Steve Andreas and Cho, Woojin and Heo, Junhyuk and Kwon, Darongsae},
+  journal={arXiv preprint arXiv:2503.03785},
+  year={2025}
+}is:
 ```
 .
 ├── bbox
@@ -103,15 +108,14 @@ python -u main.py \
 ```
 
 ## Citation
-TBA
-<!-- ```
+```
 @article{2025rspaint,
   title={Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model},
   author={Immanuel, Steve Andreas and Cho, Woojin and Heo, Junhyuk and Kwon, Darongsae},
-  journal={arXiv preprint arXiv:2211.13227},
-  year={2022}
+  journal={arXiv preprint arXiv:2503.03785},
+  year={2025}
 }
-``` -->
+```
 
 ## Acknowledgements
 This code is mainly based on [Paint by Example](https://github.com/Fantasy-Studio/Paint-by-Example). We thank the authors for their great work.
