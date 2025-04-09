@@ -41,12 +41,7 @@ Follow along the steps in the provided notebook [`notebooks/generate_samples.ipy
 ### Data preparing
 To train the model, you can use any dataset with bounding box annotations.
 
-The data structure must be like th@article{immanuel2025tackling,
-  title={Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model},
-  author={Immanuel, Steve Andreas and Cho, Woojin and Heo, Junhyuk and Kwon, Darongsae},
-  journal={arXiv preprint arXiv:2503.03785},
-  year={2025}
-}is:
+The data structure must be like this:
 ```
 .
 ├── bbox
