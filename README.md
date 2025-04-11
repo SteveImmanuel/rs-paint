@@ -1,6 +1,6 @@
 # Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model
 
-**ICLR Machine Learning for Remote Sensing Workshop, 2025 (Oral)**
+**ICLR Machine Learning for Remote Sensing Workshop, 2025 (Best Paper Award)**
 
 
 This repo contains the official code for training and generation for the paper "Tackling Few-Shot Segmentation in Remote Sensing via Inpainting Diffusion Model".
