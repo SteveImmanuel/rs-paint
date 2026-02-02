@@ -36,6 +36,7 @@ Download `sd_inpaint_samrs_ep74.ckpt` and `remoteclip.pt` and save them to the `
 
 Follow along the steps in the provided notebook [`notebooks/generate_samples.ipynb`](notebooks/generate_samples.ipynb) to generate samples using the trained model.
 
+For a more native huggingface inference experience, you can follow along from this [page](https://huggingface.co/BiliSakura/RS-Painter-Diffusers), credits to [@Bili-Sakura](https://github.com/Bili-Sakura).
 ## Training
 
 ### Data preparing
